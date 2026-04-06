@@ -3,7 +3,7 @@ import "./globals.css";
 import { SmoothScroll } from "@/components/SmoothScroll";
 
 export const metadata: Metadata = {
-  title: "Collectcar Showcase",
+  title: "porsche. Premium Showcase",
   description: "A full-screen car showcase with a scroll-timed hero and garage mode.",
 };
 

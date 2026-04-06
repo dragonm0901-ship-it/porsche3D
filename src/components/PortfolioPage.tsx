@@ -208,7 +208,7 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
             <div className="frame-shell">
               <header className="frame-nav">
                 <div className="brand-block">
-                  <Link href={`/${locale}`} className="brand-wordmark" aria-label="Collectcar home">
+                  <Link href={`/${locale}`} className="brand-wordmark" aria-label="porsche. home">
                     porsche.
                   </Link>
                   <span className="brand-tag">{copy.brandTag}</span>
