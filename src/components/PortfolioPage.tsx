@@ -56,6 +56,35 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
   const activeSlide = featuredSlides[activeIndex];
   const garageSlide = featuredSlides[garageIndex];
 
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const carId = params.get("car");
+      if (carId) {
+        const index = featuredSlides.findIndex((slide) => slide.id === carId);
+        if (index !== -1) {
+          setGarageIndex(index);
+          /* Smooth scroll to configurator after rendering completes */
+          setTimeout(() => {
+            const section = document.getElementById("garage");
+            section?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 600);
+        }
+      }
+    }
+  }, [locale]);
+
+  const currentCarUrl = origin ? `${origin}/${locale}?car=${garageSlide.id}#garage` : "";
+  const qrImageUrl = currentCarUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(currentCarUrl)}` : "";
+
   const sectionLinks = useMemo<SectionLink[]>(
     () => [
       { id: "garage", label: copy.nav.garage },
@@ -350,16 +379,34 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
                 </div>
 
                 <div className="hero-copy">
-                  <div className="hero-copy-panel" key={activeSlide.id}>
-                    <h1>{activeSlide.title}</h1>
-                    <p className="hero-subtitle">{activeSlide.subtitle}</p>
-                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeSlide.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      transition={{ duration: 0.35, ease: "easeInOut" }}
+                      className="hero-copy-panel"
+                    >
+                      <h1>{activeSlide.title}</h1>
+                      <p className="hero-subtitle">{activeSlide.subtitle}</p>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
-                <div className="hero-side-copy" key={`${activeSlide.id}-meta`}>
-                  <strong>{activeSlide.price}</strong>
-                  <p>{activeSlide.location}</p>
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlide.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="hero-side-copy"
+                  >
+                    <strong>{activeSlide.price}</strong>
+                    <p>{activeSlide.location}</p>
+                  </motion.div>
+                </AnimatePresence>
 
                 <div className="hero-stage">
                   <div className="hero-pedestal" />
@@ -369,41 +416,27 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
                     const distance = index - heroMotion;
                     const absDistance = Math.abs(distance);
 
-                    /*
-                     * Dead-zone transition:
-                     * - absDistance 0.0–0.30: full rest (opacity 1, no movement)
-                     * - absDistance 0.30–0.70: smooth transition zone
-                     * - absDistance 0.70+: fully off-screen
-                     */
-                    const DEAD = 0.30;
-                    const TRANS = 0.40;
+                    let opacity = 0;
+                    let translateY = 0;
+                    let scale = 1;
+                    let scrollTurn = 0;
 
-                    let opacity: number;
-                    let translateY: number;
-                    let scale: number;
-
-                    if (absDistance <= DEAD) {
-                      /* Rest zone — car is fully visible and stationary */
-                      opacity = 1;
-                      translateY = 0;
-                      scale = 1;
-                    } else if (absDistance <= DEAD + TRANS) {
-                      /* Transition zone — smooth swap */
-                      const progress = (absDistance - DEAD) / TRANS; /* 0→1 */
-                      const eased = progress * progress * (3 - 2 * progress); /* smoothstep */
+                    if (index === activeIndex) {
+                      /* Active slide: fades out to exactly 0 at the 0.5 midpoint, translates, scales and rotates */
+                      const progress = clamp(Math.abs(distance) * 2, 0, 1); /* 0 at center, 1 at midpoint boundary */
+                      const eased = (1 - Math.cos(progress * Math.PI)) / 2; /* sine ease-in-out */
+                      
                       opacity = 1 - eased;
-                      translateY = (distance > 0 ? -1 : 1) * eased * 120;
-                      scale = 1 - eased * 0.04;
+                      translateY = distance * 150;
+                      scale = 1 - eased * 0.05;
+                      scrollTurn = distance * 22;
                     } else {
-                      /* Off-screen */
+                      /* Inactive slides: completely hidden and removed from layout/interaction */
                       opacity = 0;
-                      translateY = distance > 0 ? -120 : 120;
-                      scale = 0.96;
+                      translateY = distance > 0 ? 150 : -150;
+                      scale = 0.95;
+                      scrollTurn = 0;
                     }
-
-                    const scrollTurn = absDistance <= DEAD
-                      ? 0
-                      : clamp(distance * 18, -22, 22);
 
                     return (
                       <div
@@ -411,13 +444,13 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
                         className="stage-slide"
                         style={{
                           opacity,
-                          /* Keep z-index well above pedestal's 0 even when distance is large */
-                          zIndex: Math.round(50 - absDistance * 10),
+                          /* Keep z-index well above pedestal's 0 */
+                          zIndex: index === activeIndex ? 50 : 10,
                           transform: `translateY(${translateY}px) scale(${scale})`,
                           pointerEvents: index === activeIndex ? "auto" : "none",
-                          visibility: absDistance > DEAD + TRANS + 0.1 ? "hidden" : "visible",
+                          visibility: index === activeIndex ? "visible" : "hidden",
                         }}
-                        aria-hidden={opacity < 0.02}
+                        aria-hidden={index !== activeIndex}
                       >
                         <ModelStage
                           slide={slide}
@@ -431,20 +464,68 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
                 </div>
               </div>
 
-              <footer className="hero-rail" key={`${activeSlide.id}-rail`}>
-                <div className="hero-count">{activeSlide.id}</div>
+              <footer className="hero-rail">
+                <div className="hero-count" style={{ display: "flex", overflow: "hidden" }}>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={activeSlide.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                    >
+                      {activeSlide.id}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
 
                 <div className="hero-stats">
                   <div className="hero-stat">
-                    <strong>{activeSlide.specs.year}</strong>
+                    <div style={{ display: "flex", overflow: "hidden", minHeight: "2.2rem" }}>
+                      <AnimatePresence mode="wait">
+                        <motion.strong
+                          key={activeSlide.specs.year}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.25, ease: "easeInOut" }}
+                        >
+                          {activeSlide.specs.year}
+                        </motion.strong>
+                      </AnimatePresence>
+                    </div>
                     <span>{copy.labels.year}</span>
                   </div>
                   <div className="hero-stat">
-                    <strong>{activeSlide.specs.mileage}</strong>
+                    <div style={{ display: "flex", overflow: "hidden", minHeight: "2.2rem" }}>
+                      <AnimatePresence mode="wait">
+                        <motion.strong
+                          key={activeSlide.specs.mileage}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.25, ease: "easeInOut" }}
+                        >
+                          {activeSlide.specs.mileage}
+                        </motion.strong>
+                      </AnimatePresence>
+                    </div>
                     <span>{copy.labels.mileage}</span>
                   </div>
                   <div className="hero-stat">
-                    <strong>{activeSlide.specs.horsepower}</strong>
+                    <div style={{ display: "flex", overflow: "hidden", minHeight: "2.2rem" }}>
+                      <AnimatePresence mode="wait">
+                        <motion.strong
+                          key={activeSlide.specs.horsepower}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.25, ease: "easeInOut" }}
+                        >
+                          {activeSlide.specs.horsepower}
+                        </motion.strong>
+                      </AnimatePresence>
+                    </div>
                     <span>{copy.labels.horsepower}</span>
                   </div>
                 </div>
@@ -533,8 +614,23 @@ export function PortfolioPage({ locale }: PortfolioPageProps) {
               variants={revealVariants}
               className="garage-stage-wrap"
             >
-              <span className="garage-badge">{copy.garage.modeLabel}</span>
               <GarageViewer slide={garageSlide} />
+
+              {qrImageUrl && (
+                <div className="ar-qr-card">
+                  <div className="qr-header">
+                    <svg className="qr-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                      <line x1="12" y1="18" x2="12.01" y2="18" />
+                    </svg>
+                    <span>AR View</span>
+                  </div>
+                  <div className="qr-code-wrap">
+                    <img src={qrImageUrl} alt="Scan for AR" className="qr-image" />
+                  </div>
+                  <span className="qr-hint">Scan with mobile</span>
+                </div>
+              )}
 
               <div className="garage-meta">
                 <div>

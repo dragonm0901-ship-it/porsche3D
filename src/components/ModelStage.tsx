@@ -4,6 +4,14 @@ import Image from "next/image";
 import { createElement, useEffect, useRef, useState } from "react";
 import type { FeaturedSlide } from "@/content/site";
 
+if (typeof window !== "undefined") {
+  // Start preloading and executing the model-viewer component bundle immediately on the client side
+  void import(
+    /* webpackPreload: true */
+    "@google/model-viewer"
+  );
+}
+
 type ModelStageProps = {
   slide: FeaturedSlide;
   priority?: boolean;
@@ -41,7 +49,10 @@ export function ModelStage({
   useEffect(() => {
     if (!shouldUseModel) return;
     let mounted = true;
-    void import("@google/model-viewer").then(() => {
+    void import(
+      /* webpackPreload: true */
+      "@google/model-viewer"
+    ).then(() => {
       if (mounted) setViewerReady(true);
     });
     return () => { mounted = false; };
@@ -97,6 +108,8 @@ export function ModelStage({
       props["min-camera-orbit"] = "auto auto auto";
       props["max-camera-orbit"] = "auto auto auto";
       props["field-of-view"] = "16deg";
+      props["loading"] = "eager";
+      props["reveal"] = "auto";
     } else if (variant === "garage") {
       props["camera-controls"] = "";
       props["disable-pan"] = "";
@@ -107,15 +120,27 @@ export function ModelStage({
       props["max-field-of-view"] = "32deg";
       props["field-of-view"] = "24deg";
       props["ar"] = "";
-      props["ar-modes"] = "webxr scene-viewer quick-look";
+      props["ar-modes"] = "scene-viewer quick-look webxr";
     } else {
       props["disable-zoom"] = "";
       props["camera-orbit"] = "250deg 75deg auto";
       props["field-of-view"] = "26deg";
     }
 
+    /* Create custom slot AR button (automatically shown only on AR-capable mobile devices) */
+    const arButton = variant === "garage" ? (
+      <button slot="ar-button" className="custom-ar-button">
+        <svg className="ar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 18v3h3M20 18v3h-3M4 6V3h3M20 6V3h-3" />
+          <path d="M12 8l-6 3.5v7l6 3.5 6-3.5v-7L12 8z" />
+          <path d="M12 8v14M6 11.5l6 3.5 6-3.5" />
+        </svg>
+        <span>View in Your Space</span>
+      </button>
+    ) : undefined;
+
     // We render the web-component directly; the browser will upgrade it once the dynamic import finishes.
-    return createElement("model-viewer", props);
+    return createElement("model-viewer", props, arButton);
   }
 
   // Only show the fallback image if there is no model or if the model errored out

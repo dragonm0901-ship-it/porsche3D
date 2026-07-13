@@ -575,8 +575,6 @@ img {
   max-width: 740px;
 }
 
-.hero-copy-panel,
-.hero-side-copy,
 .hero-rail {
   animation: fadeSlideUp 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -695,6 +693,15 @@ img {
   backface-visibility: hidden;
 }
 
+model-viewer::part(default-progress-bar) {
+  display: none;
+}
+
+.model-viewer {
+  position: relative;
+}
+
+
 .model-viewer-hero,
 .model-viewer-collection {
   pointer-events: none;
@@ -777,13 +784,21 @@ img {
   color: var(--text-soft);
 }
 
-.details-link,
-.collection-action {
+.details-link {
   display: inline-flex;
   align-items: center;
   gap: 14px;
   padding-bottom: 8px;
   border-bottom: 2px solid rgba(24, 29, 34, 0.3);
+  font-size: 1.04rem;
+  font-weight: 700;
+}
+
+.collection-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 8px;
   font-size: 1.04rem;
   font-weight: 700;
 }
@@ -1266,9 +1281,7 @@ img {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-.collection-card.is-active .collection-action {
-  border-color: rgba(255, 255, 255, 0.2);
-}
+
 
 .collection-visual {
   min-height: 320px;
@@ -1739,6 +1752,16 @@ img {
     min-height: 290px;
   }
 
+  .hero-pedestal {
+    width: 160%;
+    height: 95px;
+    bottom: -10px;
+  }
+
+  .hero-pedestal::after {
+    height: 40px;
+  }
+
   .stage-divider {
     left: 82px;
   }
@@ -2028,4 +2051,112 @@ img {
     flex-wrap: wrap;
     gap: 12px;
   }
+}
+
+/* Custom AR button styling inside model-viewer (automatically hidden on desktop) */
+.custom-ar-button {
+  background: #ffffff;
+  color: #0A0A0A;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background-color 200ms ease, transform 200ms ease, opacity 0.3s ease;
+}
+
+.custom-ar-button[style*="display: none"] {
+  display: none !important;
+}
+
+.custom-ar-button:active {
+  background: #f0f0f0;
+  transform: translateX(-50%) scale(0.96);
+}
+
+.ar-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Desktop QR Code Card for AR View sync */
+.ar-qr-card {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  width: 136px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Hide AR QR code card on mobile/tablet */
+@media (max-width: 860px) {
+  .ar-qr-card {
+    display: none;
+  }
+}
+
+.qr-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.qr-phone-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.qr-code-wrap {
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.qr-image {
+  width: 96px;
+  height: 96px;
+  display: block;
+}
+
+.qr-hint {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
 }

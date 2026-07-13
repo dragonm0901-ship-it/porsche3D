@@ -14,6 +14,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload the 3D model JSON and binary payloads for Taycan S (first) and GT4 RS (second) */}
+        <link rel="preload" href="/cars/models/car-03/scene.gltf" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/cars/models/car-03/scene.bin" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/cars/models/car-02/scene.gltf" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/cars/models/car-02/scene.bin" as="fetch" crossOrigin="anonymous" />
+      </head>
       <body suppressHydrationWarning>
         <SmoothScroll>{children}</SmoothScroll>
       </body>
